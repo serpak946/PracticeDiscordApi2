@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="PracticeDiscordApi2.MainPage">
+
+    <ScrollView>
+        <VerticalStackLayout
+            Padding="30,0"
+            Spacing="25">
+            <StackLayout Orientation="Horizontal" Spacing="25" Margin="0, 10">
+                <Label Text="Добро пожаловать" x:Name="WelcomeLabel" HorizontalOptions="StartAndExpand" VerticalOptions="Center" FontSize="Title"/>
+                <Button Text="Вход" HorizontalOptions="EndAndExpand" Padding="25, 0" FontSize="Title" Clicked="Enter_Clicked"/>
+            </StackLayout>
+            <StackLayout Orientation="Horizontal" x:Name="afterEnter" IsVisible="False" Spacing="50">
+                <StackLayout Spacing="10" HorizontalOptions="Start" MinimumWidthRequest="400">
+                    <Label Text="Guilds"/>
+                    <Picker Title="Выбор сервера" x:Name="guildPicker" SelectedIndexChanged="guildPicker_SelectedIndexChanged"/>
+                    <Entry x:Name="guildText" Placeholder="Название"/>
+                    <Image x:Name="guildImage" Aspect="Center" HorizontalOptions="Start" MinimumHeightRequest ="128" MinimumWidthRequest="128"/>
+                    <Button Text="Создать новый сервер" Clicked="CreateGuildButton_Clicked"/>
+                    <Button Text="Изменить выбранный сервер" Clicked="ModifyGuildButton_Clicked"/>
+                    <Button Text="Удалить выбранный сервер" Clicked="DeleteGuildButton_Clicked"/>
+                    <Label x:Name="StatusGuild"/>
+                </StackLayout>
+                <StackLayout Orientation="Vertical">
+                    <Label Text="Channels"/>
+                    <Picker Title="Выбор канала" x:Name="channelPicker"/>
+                    <Label x:Name="StatusChannel"/>
+                </StackLayout>
+            </StackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
