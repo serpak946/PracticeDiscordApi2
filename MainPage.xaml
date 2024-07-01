@@ -15,16 +15,29 @@
                 <StackLayout Spacing="10" HorizontalOptions="Start" MinimumWidthRequest="400">
                     <Label Text="Guilds"/>
                     <Picker Title="Выбор сервера" x:Name="guildPicker" SelectedIndexChanged="guildPicker_SelectedIndexChanged"/>
-                    <Entry x:Name="guildText" Placeholder="Название"/>
+                    <Entry x:Name="guildText" Placeholder="Название сервера"/>
                     <Image x:Name="guildImage" Aspect="Center" HorizontalOptions="Start" MinimumHeightRequest ="128" MinimumWidthRequest="128"/>
                     <Button Text="Создать новый сервер" Clicked="CreateGuildButton_Clicked"/>
                     <Button Text="Изменить выбранный сервер" Clicked="ModifyGuildButton_Clicked"/>
                     <Button Text="Удалить выбранный сервер" Clicked="DeleteGuildButton_Clicked"/>
                     <Label x:Name="StatusGuild"/>
                 </StackLayout>
-                <StackLayout Orientation="Vertical">
+                <StackLayout Orientation="Vertical" Spacing="10" HorizontalOptions="Start" MinimumWidthRequest="400">
                     <Label Text="Channels"/>
-                    <Picker Title="Выбор канала" x:Name="channelPicker"/>
+                    <Picker Title="Выбор канала" x:Name="channelPicker" SelectedIndexChanged="channelPicker_SelectedIndexChanged"/>
+                    <Entry x:Name="channelText" Placeholder="Название канала"/>
+                    <StackLayout Orientation="Horizontal">
+                        <RadioButton x:Name="channelType" GroupName="ChannelOrCat" Content="Канал" HorizontalOptions="StartAndExpand" CheckedChanged="ChannelOrCatCheckedChanged"/>
+                        <RadioButton x:Name="categoryType" GroupName="ChannelOrCat" Content="Категория" HorizontalOptions="EndAndExpand" CheckedChanged="ChannelOrCatCheckedChanged"/>
+                    </StackLayout>
+                    <StackLayout x:Name="radioButtonsChannelType" Orientation="Horizontal" IsVisible="False">
+                        <RadioButton x:Name="textType" GroupName="ChannelType" Content="Текстовый канал" HorizontalOptions="StartAndExpand"/>
+                        <RadioButton x:Name="voiceType" GroupName="ChannelType" Content="Голосовой канал" HorizontalOptions="EndAndExpand"/>
+                    </StackLayout>
+                    <Picker x:Name="channelParentPicker" Title="Выбор категории" IsVisible="False"/>
+                    <Button Text="Создать новый канал" Clicked="CreateChannelButton_Clicked"/>
+                    <Button Text="Изменить выбранный канал" Clicked="ModifyChannelButton_Clicked"/>
+                    <Button Text="Удалить выбранный канал" Clicked="DeleteChannelButton_Clicked"/>
                     <Label x:Name="StatusChannel"/>
                 </StackLayout>
             </StackLayout>

@@ -136,6 +136,19 @@ namespace PracticeDiscordApi2
             [Headers("User-Agent: testPractice")]
             [Get("/guilds/{guildId}/channels")]
             Task<List<Channel>> GetChannels([Header("Authorization")] string token, string guildId);
+
+            [Headers("User-Agent: testPractice")]
+            [Post("/guilds/{guildId}/channels")]
+            Task<Channel> CreateChannel([Header("Authorization")] string token, [Body(BodySerializationMethod.Serialized)] Dictionary<string, string> channel, string guildId);
+
+            [Headers("User-Agent: testPractice")]
+            [Patch("/channels/{channelId}")]
+            Task<Channel> ModifyChannel([Header("Authorization")] string token, string channelId, [Body(BodySerializationMethod.Serialized)] Dictionary<string, string> channel);
+
+            [Headers("User-Agent: testPractice")]
+            [Delete("/channels/{channelId}")]
+            Task<HttpResponseMessage> DeleteChannel([Header("Authorization")] string token, string channelId);
+
         }
         public interface IDiscordImage
         {
@@ -147,11 +160,12 @@ namespace PracticeDiscordApi2
         private string bot_token = new StreamReader(@"C:\Users\zvina\source\repos\PracticeDiscordApi2\Bot_Token.txt").ReadToEnd();
         private IDiscordApi api = RestService.For<IDiscordApi>("https://discord.com/api");
         private List<Guild> guilds;
-        List<Channel> channels;
+        private List<Channel> channels;
+        private List<Channel> categories;
         private User currentUser;
-        Guild currentGuild;
-        Channel currentChannel;
-        int count = 0;
+        private Guild currentGuild;
+        private Channel currentChannel;
+        private int count = 0;
 
         private async void Enter_Clicked(object sender, EventArgs e)
         {
@@ -204,6 +218,71 @@ namespace PracticeDiscordApi2
                         }*/
         }
 
+        private void channel_sort(List<Channel> channelsTemp)
+        {
+            channels = new List<Channel>();
+            categories = new List<Channel>();
+            channelPicker.Items.Clear();
+            channelParentPicker.Items.Clear();
+            categories.Add(new Channel { name = " " });
+            channelParentPicker.Items.Add(" ");
+            //channels = channelsTemp.ToList();
+            foreach (Channel c in channelsTemp)
+                if (c.type != Channel_Types.GUILD_CATEGORY && c.parent_id == null)
+                    channels.Add(c);
+            foreach (Channel c in channelsTemp)
+            {
+                if (c.type == Channel_Types.GUILD_CATEGORY)
+                {
+                    channels.Add(c);
+                    foreach (Channel c1 in channelsTemp)
+                    {
+                        if (c1.parent_id == c.id)
+                        {
+                            channels.Add(c1);
+                        }
+                    }
+                }
+            }
+            bool flag = false;
+            for (int i = 0; i < channels.Count; i++)
+            {
+                if (channels[i].type == Channel_Types.GUILD_CATEGORY)
+                {
+                    categories.Add(channels[i]);
+                    channelParentPicker.Items.Add(channels[i].name);
+                    channelPicker.Items.Add(channels[i].name);
+                    flag = true;
+                }
+                else
+                {
+                    if (flag)
+                    {
+                        if (i + 1 < channels.Count)
+                        {
+                            if (channels[i + 1].type == Channel_Types.GUILD_CATEGORY)
+                            {
+                                channelPicker.Items.Add("└──" + channels[i].name);
+                            }
+                            else
+                            {
+                                channelPicker.Items.Add("├──" + channels[i].name);
+                            }
+                        }
+                        else
+                        {
+                            channelPicker.Items.Add("└──" + channels[i].name);
+                        }
+                    }
+                    else
+                    {
+                        channelPicker.Items.Add("───" + channels[i].name);
+                    }
+                }
+            }
+            StatusChannel.Text = null;
+        }
+
         private async void guildPicker_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (guildPicker.SelectedIndex == -1 || guildPicker.SelectedItem is null) { guildImage.Source = null; guildImage.Background = null; guildText.Text = null; return; }
@@ -222,13 +301,7 @@ namespace PracticeDiscordApi2
 
             try
             {
-                List<Channel> channelsTemp = await api.GetChannels($"Bot {bot_token}", currentGuild.id);
-                channels = channelsTemp.ToList();
-
-
-                foreach (Channel channel in channels)
-                    channelPicker.Items.Add(channel.name);
-                StatusChannel.Text = null;
+                channel_sort(await api.GetChannels($"Bot {bot_token}", currentGuild.id));
             }
             catch (Refit.ApiException ex)
             {
@@ -249,7 +322,7 @@ namespace PracticeDiscordApi2
                 }*/
             }
 
-            private async void CreateGuildButton_Clicked(object sender, EventArgs e)
+        private async void CreateGuildButton_Clicked(object sender, EventArgs e)
         {
             Guild newGuild = await api.CreateGuild($"Bot {bot_token}", new Dictionary<string, string> {
                 { "name", guildText.Text }
@@ -314,6 +387,139 @@ namespace PracticeDiscordApi2
             else
             {
                 StatusGuild.Text = "Ошибка: выберите сервер";
+            }
+        }
+
+        private void channelPicker_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (channelPicker.SelectedIndex != -1)
+            {
+                currentChannel = channels[channelPicker.SelectedIndex];
+                channelText.Text = currentChannel.name;
+                channelParentPicker.SelectedIndex = categories.FindIndex(p => p.id == currentChannel.parent_id);
+                if (currentChannel.type == Channel_Types.GUILD_CATEGORY)
+                {
+                    categoryType.IsChecked = true;
+                    channelType.IsChecked = false;
+                    voiceType.IsChecked = false;
+                    textType.IsChecked = false;
+                }
+                else
+                {
+                    categoryType.IsChecked = false;
+                    channelType.IsChecked = true;
+                    if (currentChannel.type == Channel_Types.GUILD_TEXT)
+                    {
+                        textType.IsChecked = true;
+                        voiceType.IsChecked = false;
+                    }
+                    else
+                    {
+                        textType.IsChecked = false;
+                        voiceType.IsChecked = true;
+                    }
+                }
+            }
+        }
+
+        private void ChannelOrCatCheckedChanged(object sender, CheckedChangedEventArgs e)
+        {
+            if ((sender == channelType) && (sender as RadioButton).IsChecked)
+            {
+                radioButtonsChannelType.IsVisible = true;
+                channelParentPicker.IsVisible = true;
+            }
+            else
+            {
+                radioButtonsChannelType.IsVisible = false;
+                channelParentPicker.IsVisible = false;
+            }
+        }
+
+        private async void CreateChannelButton_Clicked(object sender, EventArgs e)
+        {
+            Channel newChannel;
+            if ((categoryType.IsChecked || (channelType.IsChecked && (textType.IsChecked || voiceType.IsChecked))))
+            {
+                if (channelParentPicker.SelectedIndex != -1 || channelParentPicker.SelectedItem == "")
+                {
+                    newChannel = await api.CreateChannel($"Bot {bot_token}", new Dictionary<string, string>
+                    {
+                        { "name", channelText.Text },
+                        { "type", ((int)(categoryType.IsChecked ? Channel_Types.GUILD_CATEGORY : voiceType.IsChecked ? Channel_Types.GUILD_VOICE : Channel_Types.GUILD_TEXT)).ToString() },
+                        { "parent_id", categories[channelParentPicker.SelectedIndex].id }
+                    }, currentGuild.id);
+                }
+                else
+                {
+                    newChannel = await api.CreateChannel($"Bot {bot_token}", new Dictionary<string, string>
+                    {
+                        { "name", channelText.Text },
+                        { "type", ((int)(categoryType.IsChecked ? Channel_Types.GUILD_CATEGORY : voiceType.IsChecked ? Channel_Types.GUILD_VOICE : Channel_Types.GUILD_TEXT)).ToString() }
+                    }, currentGuild.id);
+                }
+                channels.Add(newChannel);
+                channel_sort(channels);
+                StatusChannel.Text = "Канал успешно создан";
+                currentChannel = newChannel;
+                channelPicker.SelectedIndex = channels.IndexOf(newChannel);
+            }
+            else
+                StatusChannel.Text = "Выберите тип канала";
+
+        }
+        private async void ModifyChannelButton_Clicked(object sender, EventArgs e)
+        {
+            if (currentChannel != null)
+            {
+                if ((categoryType.IsChecked ? Channel_Types.GUILD_CATEGORY : voiceType.IsChecked ? Channel_Types.GUILD_VOICE : Channel_Types.GUILD_TEXT) != currentChannel.type)
+                {
+                    StatusChannel.Text = "Ошибка: нельзя менять категорию канала";
+                }
+                else
+                {
+                    Channel result = await api.ModifyChannel($"Bot {bot_token}", currentChannel.id, new Dictionary<string, string>
+                    {
+                        { "name", channelText.Text },
+                        { "parent_id", categories[channelParentPicker.SelectedIndex].id }
+                    });
+                    int index = channels.IndexOf(currentChannel);
+                    channels[index] = result;
+                    channel_sort(channels);
+                    channelPicker.SelectedIndex = channels.IndexOf(result);
+                    StatusChannel.Text = "Канал изменён";
+                }
+            }
+            else
+            {
+                StatusChannel.Text = "Ошибка: выберите канал";
+            }
+        }
+        private async void DeleteChannelButton_Clicked(object sender, EventArgs e)
+        {
+            if (currentChannel != null)
+            {
+                HttpResponseMessage response = await api.DeleteChannel($"Bot {bot_token}", currentChannel.id);
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    channels.Remove(currentChannel);
+                    currentChannel = null;
+                    channel_sort(channels);
+                    voiceType.IsChecked = false;
+                    textType.IsChecked = false;
+                    channelType.IsChecked = false;
+                    categoryType.IsChecked = false;
+                    channelText.Text = null;
+                    StatusChannel.Text = "Канал успешно удалён";
+                }
+                else
+                {
+                    StatusChannel.Text = "Ошибка: " + response.StatusCode;
+                }
+            }
+            else
+            {
+                StatusChannel.Text = "Ошибка: выберите канал";
             }
         }
     }
